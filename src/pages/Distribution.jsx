@@ -90,10 +90,10 @@ export default function Distribution() {
               <tbody>
                 {rows.map((row) => (
                   <tr key={row.id}>
-                    <td>{fmtDate(row.date)}</td>
-                    <td>{row.ben}</td>
-                    <td>{row.itemName}</td>
-                    <td>{row.qty} <span style={{ color: 'var(--mut)', fontSize: 12 }}>{row.unit}</span></td>
+                    <td data-label="Date">{fmtDate(row.date)}</td>
+                    <td data-label="Beneficiary">{row.ben}</td>
+                    <td data-label="Item">{row.itemName}</td>
+                    <td data-label="Qty">{row.qty} <span style={{ color: 'var(--mut)', fontSize: 12 }}>{row.unit}</span></td>
                     <td>
                       <button
                         className="btn-icon"

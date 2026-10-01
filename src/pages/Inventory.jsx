@@ -137,12 +137,12 @@ export default function Inventory() {
               <tbody>
                 {filtered.map((item) => (
                   <tr key={item.id}>
-                    <td style={{ fontWeight: 600 }}>{item.name}</td>
-                    <td>{item.cat}</td>
-                    <td>{item.qty}</td>
-                    <td style={{ color: 'var(--mut)' }}>{item.unit}</td>
-                    <td><StockPill item={item} /></td>
-                    <td>
+                    <td data-label="Item" style={{ fontWeight: 600 }}>{item.name}</td>
+                    <td data-label="Category">{item.cat}</td>
+                    <td data-label="Qty">{item.qty}</td>
+                    <td data-label="Unit" style={{ color: 'var(--mut)' }}>{item.unit}</td>
+                    <td data-label="Status"><StockPill item={item} /></td>
+                    <td data-label="Expiry">
                       {item.exp ? (
                         <>
                           <span style={{ fontSize: 13 }}>{fmtDate(item.exp)}</span>{' '}

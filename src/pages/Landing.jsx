@@ -37,17 +37,19 @@ function HeroIllustration() {
     <div className="hero-illustration-wrap">
       <svg viewBox="0 0 520 440" fill="none" xmlns="http://www.w3.org/2000/svg"
            className="hero-illustration" aria-hidden="true">
-        <circle cx="260" cy="220" r="180" fill="var(--pri-l)" opacity=".5"/>
-        <circle cx="260" cy="220" r="130" fill="var(--pri-l)" opacity=".4"/>
+        {/* Background circles */}
+        <circle cx="260" cy="220" r="190" fill="#EEF0FD" opacity=".6"/>
+        <circle cx="260" cy="220" r="140" fill="#EEF0FD" opacity=".5"/>
+        <circle cx="260" cy="220" r="90"  fill="#EEF0FD" opacity=".4"/>
         {/* box */}
-        <rect x="145" y="205" width="230" height="162" rx="18" fill="var(--pri)"/>
-        <rect x="145" y="205" width="230" height="56"  rx="18" fill="var(--pri-d)"/>
-        <rect x="235" y="193" width="50" height="26" rx="8" fill="var(--sun)"/>
+        <rect x="145" y="205" width="230" height="162" rx="18" fill="#6B74E8"/>
+        <rect x="145" y="205" width="230" height="56"  rx="18" fill="#545DC8"/>
+        <rect x="235" y="193" width="50" height="26" rx="8" fill="#F59E0B"/>
         <rect x="257" y="193" width="8"  height="26" rx="4" fill="#D97706"/>
         <path d="M260 298C260 298 232 275 232 257a22 22 0 0 1 28-20 22 22 0 0 1 28 20c0 18-28 41-28 41z" fill="white" opacity=".92"/>
         {/* book */}
         <g transform="rotate(-13,92,138)">
-          <rect x="64" y="102" width="58" height="78" rx="7" fill="var(--sky)"/>
+          <rect x="64" y="102" width="58" height="78" rx="7" fill="#2FA8DC"/>
           <rect x="67" y="105" width="5" height="72" rx="2.5" fill="#0284C7"/>
           <rect x="76" y="118" width="36" height="4" rx="2" fill="white" opacity=".5"/>
           <rect x="76" y="129" width="30" height="4" rx="2" fill="white" opacity=".45"/>
@@ -55,37 +57,37 @@ function HeroIllustration() {
         </g>
         {/* jacket */}
         <g transform="rotate(10,386,106)">
-          <path d="M366 77L410 100L404 67L390 58L378 67L366 58L350 67L345 100Z" fill="var(--cat-stationery)" opacity=".85"/>
+          <path d="M366 77L410 100L404 67L390 58L378 67L366 58L350 67L345 100Z" fill="#9B72E8" opacity=".85"/>
           <path d="M378 67L378 120" stroke="white" strokeWidth="2.5" opacity=".4"/>
         </g>
         {/* medicine */}
         <g transform="rotate(6,416,218)">
-          <rect x="396" y="190" width="40" height="66" rx="10" fill="var(--rose)"/>
+          <rect x="396" y="190" width="40" height="66" rx="10" fill="#E85858"/>
           <rect x="391" y="184" width="50" height="18" rx="8" fill="#DC2626"/>
           <rect x="411" y="202" width="10" height="40" rx="2" fill="white" opacity=".8"/>
           <rect x="403" y="216" width="26" height="10" rx="2" fill="white" opacity=".8"/>
         </g>
         {/* food can */}
         <g transform="translate(63,243)">
-          <ellipse cx="28" cy="9"  rx="25" ry="11" fill="var(--sun)"/>
-          <rect x="3" y="9" width="50" height="43" fill="var(--sun)"/>
+          <ellipse cx="28" cy="9"  rx="25" ry="11" fill="#F59E0B"/>
+          <rect x="3" y="9" width="50" height="43" fill="#F59E0B"/>
           <ellipse cx="28" cy="52" rx="25" ry="11" fill="#D97706"/>
           <rect x="11" y="16" width="34" height="24" rx="4" fill="white" opacity=".7"/>
         </g>
         {/* sparkles */}
-        <circle cx="172" cy="90"  r="6"   fill="var(--sun)"   opacity=".8"/>
-        <circle cx="183" cy="77"  r="3"   fill="var(--sun)"   opacity=".5"/>
-        <circle cx="417" cy="158" r="5"   fill="var(--pri)"   opacity=".5"/>
-        <circle cx="68"  cy="313" r="6"   fill="var(--sky)"   opacity=".55"/>
-        <circle cx="456" cy="335" r="5"   fill="var(--cat-stationery)" opacity=".6"/>
-        <circle cx="308" cy="80"  r="4"   fill="var(--green)" opacity=".7"/>
-        <circle cx="142" cy="354" r="4"   fill="var(--rose)"  opacity=".5"/>
+        <circle cx="172" cy="90"  r="6"   fill="#F59E0B"   opacity=".8"/>
+        <circle cx="183" cy="77"  r="3"   fill="#F59E0B"   opacity=".5"/>
+        <circle cx="417" cy="158" r="5"   fill="#6B74E8"   opacity=".5"/>
+        <circle cx="68"  cy="313" r="6"   fill="#2FA8DC"   opacity=".55"/>
+        <circle cx="456" cy="335" r="5"   fill="#9B72E8" opacity=".6"/>
+        <circle cx="308" cy="80"  r="4"   fill="#0FA96E" opacity=".7"/>
+        <circle cx="142" cy="354" r="4"   fill="#E85858"  opacity=".5"/>
         {/* people */}
         <g opacity=".1">
           {[168,198,228,258,288,318,348].map(x => (
             <g key={x} transform={`translate(${x},362)`}>
-              <circle cx="10" cy="0" r="7" fill="var(--ink)"/>
-              <rect x="4" y="9" width="12" height="17" rx="3" fill="var(--ink)"/>
+              <circle cx="10" cy="0" r="7" fill="#1E2240"/>
+              <rect x="4" y="9" width="12" height="17" rx="3" fill="#1E2240"/>
             </g>
           ))}
         </g>
@@ -160,8 +162,8 @@ export default function Landing() {
         <div className="nav-inner">
         <button className="brand brand-btn" onClick={() => window.scrollTo({top:0,behavior:"smooth"})} aria-label="Back to top">
           <svg width="24" height="24" viewBox="0 0 90 90" fill="none" aria-hidden="true">
-            <circle cx="45" cy="45" r="38" fill="var(--pri-l)"/>
-            <path d="M28 52C26 46 28 38 35 36C36 33 38 32 40 33C41 30 43 29 45 30C46 27 49 26 51 28L51 42C53 41 56 42 57 45L58 52C58 60 52 65 44 65C36 65 28 60 28 52Z" fill="var(--pri)"/>
+            <circle cx="45" cy="45" r="38" fill="#EEF0FD"/>
+            <path d="M28 52C26 46 28 38 35 36C36 33 38 32 40 33C41 30 43 29 45 30C46 27 49 26 51 28L51 42C53 41 56 42 57 45L58 52C58 60 52 65 44 65C36 65 28 60 28 52Z" fill="#6B74E8"/>
             <path d="M44 57C44 57 36 50 36 45a5.5 5.5 0 0 1 8-5 5.5 5.5 0 0 1 8 5C52 50 44 57 44 57Z" fill="white"/>
           </svg>
           Sahayak<span className="brand-dot">.</span>

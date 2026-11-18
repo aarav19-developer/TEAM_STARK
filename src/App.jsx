@@ -1,266 +1,109 @@
-﻿/* =========================================================
-   App.jsx v5 – lazy loading, MongoDB-style loader, splash fix
-   ========================================================= */
-import {
-  useEffect, useRef, useState, useCallback,
-  createContext, useContext, lazy, Suspense
-} from 'react';
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AppProvider } from './context/AppContext';
-import { Sidebar } from './components/Sidebar';
+﻿import { HashRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { Suspense, lazy, useEffect } from "react";
+import { AuthProvider, useAuth } from "./auth/AuthContext";
+import { ProtectedRoute } from "./auth/ProtectedRoute";
+import { ThemeProvider } from "./context/ThemeContext";
+import { SidebarProvider } from "./context/SidebarContext";
+import { AppShell } from "./components/AppShell";
+import { ToastProvider } from "./components/Toast";
 
-import './styles/global.css';
-import './styles/dashboard.css';
+const LogoSplash   = lazy(() => import("./pages/LogoSplashPage"));
+const LandingPage  = lazy(() => import("./pages/LandingPage"));
+const LoginPage    = lazy(() => import("./pages/LoginPage"));
+const Dashboard    = lazy(() => import("./pages/Dashboard"));
+const Inventory    = lazy(() => import("./pages/Inventory"));
+const Donations    = lazy(() => import("./pages/Donations"));
+const Distribution = lazy(() => import("./pages/Distribution"));
+const Donors       = lazy(() => import("./pages/Donors"));
 
-/* ─── Lazy page imports ─── */
-const Landing      = lazy(() => import('./pages/Landing'));
-const Dashboard    = lazy(() => import('./pages/Dashboard'));
-const Inventory    = lazy(() => import('./pages/Inventory'));
-const Donations    = lazy(() => import('./pages/Donations'));
-const Donors       = lazy(() => import('./pages/Donors'));
-const Distribution = lazy(() => import('./pages/Distribution'));
-
-/* ─── Theme context ─── */
-export const ThemeContext = createContext({ dark: false, toggle: () => {} });
-export const useTheme = () => useContext(ThemeContext);
-
-function ThemeProvider({ children }) {
-  const [dark, setDark] = useState(() => {
-    try { return localStorage.getItem('sahayak-theme') === 'dark'; }
-    catch { return false; }
-  });
-  useEffect(() => {
-    document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
-    try { localStorage.setItem('sahayak-theme', dark ? 'dark' : 'light'); } catch {}
-  }, [dark]);
-  const toggle = useCallback(() => setDark(d => !d), []);
-  return <ThemeContext.Provider value={{ dark, toggle }}>{children}</ThemeContext.Provider>;
-}
-
-/* ─── MongoDB-style bouncing dots loader ─── */
-function PageLoader() {
+function Loader() {
   return (
-    <div className="page-loader" aria-label="Loading">
-      <div className="pl-dot" />
-      <div className="pl-dot" />
-      <div className="pl-dot" />
+    <div style={{ position:"fixed", inset:0, display:"flex", alignItems:"center", justifyContent:"center", gap:8, background:"#070B14" }}>
+      {[0,1,2].map(i => (
+        <div key={i} style={{ width:10, height:10, borderRadius:"50%", background:"#00FFFF", opacity:0.5,
+          animation:"bounce3 1.1s ease-in-out infinite", animationDelay:`${i*0.15}s` }} />
+      ))}
     </div>
   );
 }
 
-/* ─── Custom cursor (desktop only) – single round circle ─── */
-function Cursor() {
-  const ringRef = useRef(null);
-  const mouse   = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  const smooth  = useRef({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
-  const raf     = useRef(null);
-
+/*
+  LogoutOnVisit — mounts on public routes (/, /landing).
+  If user is logged in, visiting these routes logs them out.
+  This handles:
+    - Browser back button to landing/home after login
+    - Manually typing / or /landing in URL while logged in
+*/
+function LogoutOnVisit() {
+  const { logout } = useAuth();
+  const location = useLocation();
   useEffect(() => {
-    /* only on pointer-fine devices (not touch) */
-    if (!window.matchMedia('(pointer: fine)').matches) return;
-
-    // Apply initial position immediately
-    if (ringRef.current) {
-      const ix = smooth.current.x, iy = smooth.current.y;
-      ringRef.current.style.transform = `translate(${ix}px,${iy}px) translate(-50%,-50%)`;
-    }
-
-    const move = (e) => {
-      mouse.current = { x: e.clientX, y: e.clientY };
-    };
-    const loop = () => {
-      smooth.current.x += (mouse.current.x - smooth.current.x) * 0.35;
-      smooth.current.y += (mouse.current.y - smooth.current.y) * 0.35;
-      if (ringRef.current)
-        ringRef.current.style.transform =
-          `translate(${smooth.current.x}px,${smooth.current.y}px) translate(-50%,-50%)`;
-      raf.current = requestAnimationFrame(loop);
-    };
-    raf.current = requestAnimationFrame(loop);
-
-    const hi = (e) => { if (e.target.closest('a,button,input,select,textarea,[role="button"]')) document.body.classList.add('cursor-hover'); };
-    const ho = (e) => { if (e.target.closest('a,button,input,select,textarea,[role="button"]')) document.body.classList.remove('cursor-hover'); };
-
-    document.addEventListener('mousemove', move);
-    document.addEventListener('mouseover',  hi);
-    document.addEventListener('mouseout',   ho);
-    return () => {
-      cancelAnimationFrame(raf.current);
-      document.removeEventListener('mousemove', move);
-      document.removeEventListener('mouseover',  hi);
-      document.removeEventListener('mouseout',   ho);
-    };
-  }, []);
-
-  return (
-    <div className="cursor-ring" ref={ringRef} aria-hidden="true" />
-  );
-}
-
-/* ─── Splash: SVG drops, letters fall from top one by one,
-       loading bar replaced with MongoDB-style dots ─── */
-const WORD = 'Sahayak';
-
-function Splash({ onDone }) {
-  const [phase,    setPhase]    = useState('icon');
-  const [visCount, setVisCount] = useState(0);
-  const [gone,     setGone]     = useState(false);
-
-  /* Step 1 – icon visible, 500ms later start letters */
-  useEffect(() => {
-    const t = setTimeout(() => setPhase('text'), 500);
-    return () => clearTimeout(t);
-  }, []);
-
-  /* Step 2 – drop each letter 110ms apart */
-  useEffect(() => {
-    if (phase !== 'text') return;
-    let count = 0;
-    const iv = setInterval(() => {
-      count++;
-      setVisCount(count);
-      if (count >= WORD.length) {
-        clearInterval(iv);
-        setTimeout(() => setPhase('sub'),  200);
-        setTimeout(() => setPhase('exit'), 2400);
-        setTimeout(() => { setGone(true); onDone(); }, 2900);
-      }
-    }, 110);
-    return () => clearInterval(iv);
-  }, [phase, onDone]);
-
-  if (gone) return null;
-
-  return (
-    <div className={`splash${phase === 'exit' ? ' splash-exit' : ''}`} aria-hidden="true">
-      <div className="splash-orb splash-orb-1" />
-      <div className="splash-orb splash-orb-2" />
-      <div className="splash-orb splash-orb-3" />
-
-      {/* SVG symbol */}
-      <div className="splash-svg-wrap">
-        <div className="splash-ring splash-ring-outer" />
-        <div className="splash-ring splash-ring-mid"   />
-        <svg width="118" height="118" viewBox="0 0 110 110" fill="none" className="splash-svg-icon">
-          <circle cx="55" cy="55" r="50" fill="#EEF0FD" />
-          <circle cx="55" cy="55" r="46" stroke="#6B74E8" strokeWidth="1.5"
-            strokeDasharray="6 8" opacity=".4"
-            style={{ transformOrigin:'55px 55px', animation:'sOrbit 8s linear infinite' }} />
-          <path d="M34 64C31 56 34 46 42 44C43 40 46 38 49 40C50 36 53 35 55 37C57 33 61 32 63 35L63 52C66 51 69 52 70 56L71 64C71 74 64 80 55 80C46 80 34 74 34 64Z"
-            fill="#6B74E8" opacity=".9"/>
-          <path d="M55 71C55 71 44 62 44 55a7.5 7.5 0 0 1 11-6.6 7.5 7.5 0 0 1 11 6.6C66 62 55 71 55 71Z"
-            fill="white"/>
-          <circle cx="55" cy="9" r="5" fill="#6B74E8"
-            style={{ transformOrigin:'55px 55px', animation:'sOrbit 3s linear infinite' }} />
-          <path d="M26 32 L27.5 36 L32 37 L27.5 38 L26 42 L24.5 38 L20 37 L24.5 36 Z" fill="#F59E0B" opacity=".9"/>
-          <path d="M84 28 L85 31 L88 32 L85 33 L84 36 L83 33 L80 32 L83 31 Z"         fill="#0DB3A0" opacity=".9"/>
-          <path d="M20 72 L21 75 L24 76 L21 77 L20 80 L19 77 L16 76 L19 75 Z"         fill="#2FA8DC" opacity=".9"/>
-          <path d="M90 68 L91.5 72 L95 73 L91.5 74 L90 78 L88.5 74 L85 73 L88.5 72 Z" fill="#E85858" opacity=".9"/>
-        </svg>
-      </div>
-
-      {/* Letters drop from top */}
-      <div style={{ display:'flex', overflow:'hidden' }}>
-        {WORD.split('').map((ch, i) => (
-          <span key={i} style={{
-            display: 'inline-block',
-            opacity:   visCount > i ? 1 : 0,
-            transform: visCount > i
-              ? 'translateY(0) rotateX(0deg)'
-              : 'translateY(-70px) rotateX(-90deg)',
-            transition: 'transform .42s cubic-bezier(.34,1.3,.64,1), opacity .28s',
-            color: i === 5 ? 'var(--teal)' : 'var(--pri-d)',
-            fontFamily: '"Space Grotesk", sans-serif',
-            fontSize:   'clamp(48px, 10vw, 88px)',
-            fontWeight: 700,
-            lineHeight: 1,
-            letterSpacing: '-.03em',
-            transformOrigin: 'top center',
-          }}>{ch}</span>
-        ))}
-      </div>
-
-      {/* Tagline + MongoDB-style dots loader */}
-      <div className={`splash-sub${phase === 'sub' || phase === 'exit' ? ' in' : ''}`}
-           style={{ marginTop: 20 }}>
-        <div className="splash-tagline">NGO Donation &amp; Inventory</div>
-        {/* bouncing dots instead of bar */}
-        <div className="splash-dots">
-          <span className="splash-dot" />
-          <span className="splash-dot" />
-          <span className="splash-dot" />
-          <span className="splash-dot" />
-          <span className="splash-dot" />
-        </div>
-      </div>
-
-      <style>{`
-        .splash-svg-wrap{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center;margin-bottom:24px;}
-        .splash-ring{position:absolute;border-radius:50%;border-style:solid;animation:sRingPulse 2.4s ease-in-out infinite;}
-        .splash-ring-outer{width:150px;height:150px;border:2px solid rgba(84,93,200,.22);}
-        .splash-ring-mid  {width:128px;height:128px;border:1.5px solid rgba(84,93,200,.3);animation-delay:.5s;}
-        @keyframes sRingPulse{0%,100%{transform:scale(1);opacity:.7}50%{transform:scale(1.06);opacity:1}}
-        .splash-svg-icon{position:relative;z-index:2;filter:drop-shadow(0 8px 28px rgba(84,93,200,.3));animation:sIconBob 3s ease-in-out infinite;}
-        @keyframes sIconBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-7px)}}
-        @keyframes sOrbit{to{transform:rotate(360deg)}}
-
-        .splash-dots{display:flex;align-items:center;gap:7px;margin-top:14px;}
-        .splash-dot{
-          width:9px;height:9px;border-radius:50%;
-          background:#545DC8;opacity:.25;
-          animation:splashDotBounce 1.1s ease-in-out infinite;
-        }
-        .splash-dot:nth-child(1){animation-delay:0s}
-        .splash-dot:nth-child(2){animation-delay:.15s}
-        .splash-dot:nth-child(3){animation-delay:.30s}
-        .splash-dot:nth-child(4){animation-delay:.45s}
-        .splash-dot:nth-child(5){animation-delay:.60s}
-        @keyframes splashDotBounce{
-          0%,80%,100%{transform:translateY(0);opacity:.25}
-          40%        {transform:translateY(-10px);opacity:1}
-        }
-      `}</style>
-    </div>
-  );
-}
-
-/* ─── App layout ─── */
-function AppLayout({ children }) {
-  return (
-    <div className="app-layout">
-      <Sidebar />
-      <main className="app-main">{children}</main>
-    </div>
-  );
+    logout();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+  return null;
 }
 
 export default function App() {
-  const [splashDone, setSplashDone] = useState(false);
-  const handleDone = useCallback(() => setSplashDone(true), []);
-
   return (
     <ThemeProvider>
-      <AppProvider>
-        <Cursor />
-        {!splashDone && <Splash onDone={handleDone} />}
-        {splashDone && (
-          <div style={{ animation: 'pageIn .4s ease both' }}>
-            <HashRouter>
-              <Suspense fallback={<PageLoader />}>
-                <Routes>
-                  <Route path="/"             element={<Landing />} />
-                  <Route path="/dashboard"    element={<AppLayout><Dashboard /></AppLayout>} />
-                  <Route path="/inventory"    element={<AppLayout><Inventory /></AppLayout>} />
-                  <Route path="/donations"    element={<AppLayout><Donations /></AppLayout>} />
-                  <Route path="/donors"       element={<AppLayout><Donors /></AppLayout>} />
-                  <Route path="/distribution" element={<AppLayout><Distribution /></AppLayout>} />
-                  <Route path="*"             element={<Navigate to="/" replace />} />
-                </Routes>
-              </Suspense>
-            </HashRouter>
-          </div>
-        )}
-      </AppProvider>
+      <SidebarProvider>
+        <AuthProvider>
+          <HashRouter>
+            <ToastProvider />
+            <Suspense fallback={<Loader />}>
+              <Routes>
+
+                {/* ── PUBLIC: logo entry ──────────────────────────────
+                    Visiting / logs out (if logged in) and shows logo.
+                    Logo → navigates to /landing                        */}
+                <Route path="/" element={
+                  <>
+                    <LogoutOnVisit />
+                    <LogoSplash />
+                  </>
+                } />
+
+                {/* ── PUBLIC: landing page ────────────────────────────
+                    Visiting /landing logs out (if logged in).
+                    Landing → "Login" button → /login                   */}
+                <Route path="/landing" element={
+                  <>
+                    <LogoutOnVisit />
+                    <LandingPage />
+                  </>
+                } />
+
+                {/* ── PUBLIC: login ───────────────────────────────────
+                    After successful login → /dashboard                 */}
+                <Route path="/login" element={
+                  <>
+                    <LogoutOnVisit />
+                    <LoginPage />
+                  </>
+                } />
+
+                {/* ── PROTECTED: all operational pages ───────────────
+                    sessionStorage cleared on refresh = auto logout.
+                    Any direct URL access checks session first.         */}
+                <Route element={<ProtectedRoute />}>
+                  <Route element={<AppShell />}>
+                    <Route path="/dashboard"     element={<Dashboard />} />
+                    <Route path="/inventory"     element={<Inventory />} />
+                    <Route path="/donations"     element={<Donations />} />
+                    <Route path="/distributions" element={<Distribution />} />
+                    <Route path="/donors"        element={<Donors />} />
+                  </Route>
+                </Route>
+
+                {/* ── CATCH-ALL: unknown URL → logo entry ─────────── */}
+                <Route path="*" element={<Navigate to="/" replace />} />
+
+              </Routes>
+            </Suspense>
+          </HashRouter>
+        </AuthProvider>
+      </SidebarProvider>
     </ThemeProvider>
   );
 }

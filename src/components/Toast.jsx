@@ -1,51 +1,29 @@
-﻿/* =========================================================
-   Toast.jsx  – Auto-hide toast notifications
-   Usage: <Toast toasts={toasts} />
-   Manage toasts in parent state: [{id, msg, type}]
-   ========================================================= */
-import { useEffect } from 'react';
-import { Icon } from './Icons';
+﻿import { useState, useEffect, useCallback } from "react";
+import { X, CheckCircle, AlertCircle } from "lucide-react";
 
-export function Toast({ toasts, onRemove }) {
+let _add = null;
+export function toast(msg, type="success") { _add?.({ msg, type, id: Date.now() }); }
+
+export function ToastProvider() {
+  const [toasts, setToasts] = useState([]);
+  const add = useCallback((t) => {
+    setToasts(p=>[...p,t]);
+    setTimeout(()=>setToasts(p=>p.filter(x=>x.id!==t.id)),4000);
+  },[]);
+  useEffect(()=>{ _add=add; return ()=>{ _add=null; }; },[add]);
   return (
-    <div className="toast-container" aria-live="polite" aria-atomic="true">
-      {toasts.map((t) => (
-        <ToastItem key={t.id} toast={t} onRemove={onRemove} />
+    <div className="fixed bottom-5 right-5 flex flex-col gap-2 z-[9999] pointer-events-none">
+      {toasts.map(t=>(
+        <div key={t.id} className="pointer-events-auto anim-slide flex items-center gap-3 px-4 py-3 rounded-xl glass border border-white/10 shadow-2xl min-w-[260px] max-w-sm">
+          {t.type==="error"
+            ? <AlertCircle size={16} className="text-rose-400 shrink-0"/>
+            : <CheckCircle size={16} className="text-emerald-400 shrink-0"/>}
+          <span className="text-sm text-slate-200 flex-1">{t.msg}</span>
+          <button onClick={()=>setToasts(p=>p.filter(x=>x.id!==t.id))} className="text-slate-500 hover:text-slate-300">
+            <X size={13}/>
+          </button>
+        </div>
       ))}
     </div>
   );
-}
-
-function ToastItem({ toast, onRemove }) {
-  useEffect(() => {
-    const timer = setTimeout(() => onRemove(toast.id), 2000);
-    return () => clearTimeout(timer);
-  }, [toast.id, onRemove]);
-
-  const iconName = toast.type === 'error' ? 'warning' : 'check';
-
-  return (
-    <div className={`toast ${toast.type || 'success'}`} role="status">
-      <Icon name={iconName} size={15} />
-      {toast.msg}
-    </div>
-  );
-}
-
-/* ---- Helper hook for managing toasts ---- */
-import { useState, useCallback } from 'react';
-
-export function useToast() {
-  const [toasts, setToasts] = useState([]);
-
-  const showToast = useCallback((msg, type = 'success') => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, msg, type }]);
-  }, []);
-
-  const removeToast = useCallback((id) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-
-  return { toasts, showToast, removeToast };
 }

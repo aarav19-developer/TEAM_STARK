@@ -1,14 +1,18 @@
 ﻿/* =========================================================
-   DeleteConfirm.jsx  – Reusable delete confirmation dialog
-   Props: message, onConfirm, onCancel
+   DeleteConfirm.jsx  – Generic delete confirmation dialog
+   Props: message, onConfirm, onCancel, busy
    ========================================================= */
-export function DeleteConfirm({ message, onConfirm, onCancel }) {
+export function DeleteConfirm({ message, onConfirm, onCancel, busy = false }) {
   return (
-    <div style={{ textAlign: 'center' }}>
-      <p style={{ marginBottom: 20, color: 'var(--ink)', lineHeight: 1.6 }}>{message}</p>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 10 }}>
-        <button className="btn btn-ghost" onClick={onCancel}>Cancel</button>
-        <button className="btn btn-danger" onClick={onConfirm}>Delete</button>
+    <div>
+      <p style={{ marginBottom: 24, color: "var(--txt)", lineHeight: 1.6 }}>{message}</p>
+      <div className="form-actions">
+        <button type="button" className="btn btn-ghost" onClick={onCancel} disabled={busy}>
+          Cancel
+        </button>
+        <button type="button" className="btn btn-danger" onClick={onConfirm} disabled={busy}>
+          {busy ? "Deleting…" : "Delete"}
+        </button>
       </div>
     </div>
   );
